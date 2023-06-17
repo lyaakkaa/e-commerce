@@ -3,7 +3,7 @@ services:
     name: fastapi
     runtime: docker
     plan: free
-    repo: https://github.com/lyakusik/shnrq2023.git
+    repo: https://github.com/lyakusik/e-commerce.git
     region: frankfurt
     branch: main
     envVars:
