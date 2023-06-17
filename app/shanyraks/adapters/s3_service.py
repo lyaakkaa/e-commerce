@@ -27,3 +27,18 @@ class S3Service:
         filekey = f"shanyraks/{id}/{filename}"
         
         self.s3.delete_object(Bucket=bucket, Key=filekey)
+
+    def upload_avatar(self, user_id: str, file: BinaryIO, filename: str):
+        bucket = "leila.bekturgan1-bucket"
+        filekey = f"users/{user_id}/{filename}"
+        
+        self.s3.upload_fileobj(file, bucket, filekey)
+        
+        bucket_location = boto3.client("s3").get_bucket_location(
+            Bucket=bucket
+        )
+        object_url = "https://s3-{0}.amazonaws.com/{1}/{2}".format(
+            bucket_location["LocationConstraint"], bucket, filekey
+        )
+        
+        return object_url

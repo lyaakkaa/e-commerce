@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from bson.objectid import ObjectId
+from fastapi import HTTPException
 from pymongo.database import Database
 
 from ..utils.security import hash_password
@@ -47,3 +48,73 @@ class AuthRepository:
                 }
             },
         )
+
+    def add_to_favourites(self, user_id: str, shanyrak: dict):
+        self.database['users'].update_one(
+            filter={"_id": ObjectId(user_id)},
+            update={
+                "$push": {
+                    "shanyraks": shanyrak
+                }
+            },
+        )
+
+    def get_user_favourites(self, user_id: str) -> list:
+        user = self.database["users"].find_one(
+            {
+                "_id": ObjectId(user_id),
+            }
+        )
+        return user["shanyraks"] if user["shanyraks"] else []
+
+    def delete_user_favourite(self, user_id: str, shanyrak_id: str):
+        snanyrak_checker = self.database['users'].find_one(
+            filter={
+                "shanyraks._id": ObjectId(shanyrak_id)
+            }
+        )
+        if snanyrak_checker:
+            response = self.database['users'].update_one(
+                filter={"_id": ObjectId(user_id)},
+                update={
+                    "$pull": {
+                        "shanyraks": {
+                            "_id": ObjectId(shanyrak_id)
+                        }
+                    }
+                }
+            )
+            return response
+        else:
+            raise HTTPException(status_code=404, detail="Such favourite not found")
+    
+    def upload_avatar(self, user_id: str, avatar_url: str):
+        user = self.database["users"].find_one(
+            {
+                "_id": ObjectId(user_id),
+            }
+        )
+        if user['avatar_url']:
+            self.database["users"].update_one(
+                filter={"_id": ObjectId(user_id)},
+                update={
+                    {"$set": {"avatar_url": avatar_url}}
+                }
+            )
+
+    def delete_avatar(self, user_id: str):
+        user = self.database["users"].find_one(
+            {
+                "_id": ObjectId(user_id),
+            }
+        )
+        if user['avatar_url']:
+            self.database["users"].update_one(
+                filter={"_id": ObjectId(user_id)},
+                update={
+                    {"$set": {"avatar_url": ""}}
+                }
+            )
+        else:
+            raise HTTPException(status_code=404, detail="Such avatar not found")
+                

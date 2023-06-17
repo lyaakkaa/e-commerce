@@ -17,6 +17,7 @@ class GetMyAccountResponse(AppModel):
     phone: str = ""
     name: str = ""
     city: str = ""
+    avatar_url: str = ""
 
 
 @router.get("/users/me", response_model=GetMyAccountResponse)
