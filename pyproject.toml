@@ -16,6 +16,7 @@ python-multipart = "^0.0.6"
 pymongo = {extras = ["srv"], version = "^4.3.3"}
 orjson = "^3.9.1"
 boto3 = "^1.26.153"
+requests = "^2.31.0"
 
 
 [tool.poetry.group.dev.dependencies]

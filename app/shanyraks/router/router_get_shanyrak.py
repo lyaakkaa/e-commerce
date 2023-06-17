@@ -19,6 +19,7 @@ class GetShanyrakResponse(AppModel):
     rooms_count: int
     description: str
     user_id: Any
+    location: Any
     media: List[str] = []
 
 
