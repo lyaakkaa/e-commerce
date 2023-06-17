@@ -7,9 +7,9 @@ class S3Service:
     def __init__(self):
         self.s3 = boto3.client("s3")
 
-    def upload_file(self, file: BinaryIO, filename: str):
+    def upload_file(self, id: str, file: BinaryIO, filename: str):
         bucket = "leila.bekturgan1-bucket"
-        filekey = f"posts/{filename}"
+        filekey = f"shanyraks/{id}/{filename}"
         
         self.s3.upload_fileobj(file, bucket, filekey)
         
@@ -21,3 +21,9 @@ class S3Service:
         )
         
         return object_url
+    
+    def delete_file(self, id: str, filename: str):
+        bucket = "leila.bekturgan1-bucket"
+        filekey = f"shanyraks/{id}/{filename}"
+        
+        self.s3.delete_object(Bucket=bucket, Key=filekey)

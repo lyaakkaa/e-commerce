@@ -46,21 +46,25 @@ class ShanyrakRepository:
     def create_comment_by_id(self, id: str, user_id: str, content: str):
         comment_id = ObjectId()  # Generate a random comment ID
         created_at = datetime.now()  # Get the current timestamp
-
-        comment = {
-            "_id": comment_id,
-            "author_id": ObjectId(user_id),
-            "content": content,
-            "created_at": created_at
-        }
-        result = self.database["shanyraks"].update_one(
-            filter={"_id": ObjectId(id)},
-            update={
-                "$push": {"comments": comment}
+        shanyrak_checker = self.database["shanyraks"].find_one({"_id": ObjectId(id)})
+        if shanyrak_checker:
+            comment = {
+                "_id": comment_id,
+                "author_id": ObjectId(user_id),
+                "content": content,
+                "created_at": created_at
             }
-        )
-        if result.matched_count == 0:
-            raise HTTPException(status_code=404, detail="Shanyrak not found")
+            self.database["shanyraks"].update_one(
+                filter={"_id": ObjectId(id)},
+                update={
+                    "$push": {"comments": comment}
+                }
+            )
+        else:
+            raise HTTPException(
+                status_code=404,
+                detail="Shanyrak not found",
+            )
         
     def get_comments_by_id(self, shanyrak_id: str):
         shanyrak = self.database["shanyraks"].find_one({"_id": ObjectId(shanyrak_id)})
@@ -123,13 +127,26 @@ class ShanyrakRepository:
         check_shanyrak_exist = self.database["shanyraks"].find_one(
             {"$and": [{"_id": ObjectId(id)}, {"author_id": ObjectId(user_id)}]}
         )
-
-        # if check_shanyrak_exist:
-        self.database["shanyraks"].update_one(
-            {"$and": [{"_id": ObjectId(id)}, {"author_id": ObjectId(user_id)}]},
-            {"$push": {"media": image_url}},
+        if check_shanyrak_exist:
+            self.database["shanyraks"].update_one(
+                {"$and": [{"_id": ObjectId(id)}, {"author_id": ObjectId(user_id)}]},
+                {"$push": {"media": image_url}},
+            )
+        else:
+            raise HTTPException(
+                status_code=404,
+                detail="Shanyrak does not exist, or you cannot upload images to others posts",)
+        
+    def delete_images(self, id: str, user_id: str, image_url: str):
+        check_shanyrak_exist = self.database["shanyraks"].find_one(
+            {"$and": [{"_id": ObjectId(id)}, {"author_id": ObjectId(user_id)}]}
         )
-        # else:
-        #     raise HTTPException(
-        #         status_code=404,
-        #         detail="Shanyrak does not exist, or you cannot upload images to others posts",)
+        if check_shanyrak_exist:
+            self.database["shanyraks"].update_one(
+                {"$and": [{"_id": ObjectId(id)}, {"author_id": ObjectId(user_id)}]},
+                {"$pull": {"media": image_url}},
+            )
+        else:
+            raise HTTPException(
+                status_code=404,
+                detail="Shanyrak does not exist, or you cannot upload images to others posts",)
