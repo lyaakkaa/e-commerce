@@ -150,3 +150,84 @@ class ShanyrakRepository:
             raise HTTPException(
                 status_code=404,
                 detail="Shanyrak does not exist, or you cannot upload images to others posts",)
+        
+    def get_filtered_shanyraks(
+        self,
+        limit: int,
+        offset: int,
+        type: str | None,
+        rooms_count: int | None,
+        price_from: int | None,
+        price_until: int | None,
+        latitude: float | None,
+        longitude: float | None,
+        radius: float | None,
+    ):
+        def get_query_filter(
+            query_filter: dict,
+            type: str | None,
+            rooms_count: int | None,
+            price_from: int | None,
+            price_until: int | None,
+            latitude: float | None,
+            longitude: float | None,
+            radius: float | None,
+        ):
+            if type is not None:
+                query_filter["type"] = type
+            if rooms_count is not None:
+                query_filter["rooms_count"] = rooms_count
+            price_filter = {}
+            if price_from is not None:
+                price_filter["$gte"] = price_from
+            if price_until is not None:
+                price_filter["$lte"] = price_until
+            if price_filter != {}:
+                query_filter["price"] = (price_filter,)
+            if latitude is not None and longitude is not None and radius is not None:
+                radius_converted_approximately = radius * 3.2535313808
+                query_filter["location"] = {
+                    "$geoWithin": {
+                        "$centerSphere": [
+                            [longitude, latitude],
+                            radius_converted_approximately,
+                        ]
+                    }
+                }
+            return query_filter
+
+        response_count = 0
+        query_filter = get_query_filter(
+            {},
+            type,
+            rooms_count,
+            price_from,
+            price_until,
+            latitude,
+            longitude,
+            radius,
+        )
+        if limit == 0 and offset == 0:
+            response = self.database["shanyraks"].find(query_filter)
+            response_count = self.database["shanyraks"].count_documents({})
+        else:
+            response = (
+                self.database["shanyraks"].find(query_filter).limit(limit).skip(offset)
+            )
+
+            response_count = self.database["shanyraks"].count_documents(query_filter)
+
+        response_list = []
+        for shanyrak in response:
+            response_list.append(
+                {
+                    "_id": str(shanyrak["_id"]),
+                    "type": shanyrak["type"],
+                    "rooms_count": shanyrak["rooms_count"],
+                    "address": shanyrak["address"],
+                    "price": shanyrak["price"],
+                    "area": shanyrak["area"],
+                    "location": shanyrak["location"],
+                }
+            )
+        return {"total": response_count, "items": response_list}
